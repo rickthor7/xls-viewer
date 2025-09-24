@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Sheet Viewer - XLS/XLSX Viewer</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Reset & Basic Setup */
+        :root {
+            --bg-color: #0f0f1a;
+            --card-bg-color: rgba(22, 22, 34, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-accent: #6a5af9;
+            --secondary-accent: #f72585;
+            --text-color: #e0e0e0;
+            --text-muted-color: #a0a0b0;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(106, 90, 249, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(247, 37, 133, 0.2) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* Kontainer Utama */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            text-align: center;
+        }
+
+        /* Header */
+        header {
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-muted-color);
+        }
+
+        /* Upload Box (Glassmorphism) */
+        .upload-box {
+            background: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            margin-bottom: 40px;
+        }
+        
+        .upload-box.dragover {
+            transform: scale(1.02);
+            border-color: var(--primary-accent);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-accent);
+        }
+
+        .upload-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-box p {
+            color: var(--text-muted-color);
+            margin-bottom: 25px;
+        }
+
+        .upload-button {
+            background: var(--primary-accent);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            background: #7a6bff;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        #fileName {
+            margin-top: 20px;
+            color: var(--text-muted-color);
+            font-style: italic;
+        }
+
+        /* Kontainer Tabel */
+        .table-container {
+            background: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            overflow-x: auto; /* Agar bisa di-scroll horizontal jika tabel lebar */
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .table-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Styling Tabel */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead th {
+            background-color: rgba(106, 90, 249, 0.1);
+            color: var(--primary-accent);
+            font-weight: 500;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            color: var(--text-muted-color);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Galactic Sheet Viewer</h1>
+            <p>Lihat file .XLS atau .XLSX langsung di browser Anda. Modern, Cepat, dan Aman.</p>
+        </header>
+
+        <main>
+            <div id="uploadBox" class="upload-box">
+                <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16">
+                        <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2z"/>
+                    </svg>
+                </div>
+                <h2>Tarik & Lepas File Excel Anda Di Sini</h2>
+                <p>atau</p>
+                <button id="uploadButton" class="upload-button">Pilih File dari Komputer</button>
+                <input type="file" id="fileInput" accept=".xlsx, .xls">
+                <p id="fileName"></p>
+            </div>
+
+            <div id="tableContainer" class="table-container">
+                </div>
+        </main>
+
+        <footer>
+            <p>Dibuat oleh ❤️ arek PTL.</p>
+        </footer>
+    </div>
+
+    <script>
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const fileNameDisplay = document.getElementById('fileName');
+        const tableContainer = document.getElementById('tableContainer');
+
+        // Fungsi untuk memproses file
+        const processFile = (file) => {
+            if (!file) return;
+
+            // Validasi tipe file (opsional tapi bagus)
+            const validExtensions = ['xlsx', 'xls'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (!validExtensions.includes(fileExtension)) {
+                alert("Format file tidak didukung. Harap unggah file .xlsx atau .xls.");
+                return;
+            }
+            
+            fileNameDisplay.textContent = `Memproses: ${file.name}...`;
+            tableContainer.innerHTML = ''; // Kosongkan tabel sebelumnya
+            tableContainer.classList.remove('visible');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Ambil sheet pertama
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Konversi ke HTML
+                const htmlTable = XLSX.utils.sheet_to_html(worksheet);
+                
+                tableContainer.innerHTML = htmlTable;
+                tableContainer.classList.add('visible');
+                fileNameDisplay.textContent = `Menampilkan: ${file.name}`;
+            };
+            
+            reader.onerror = () => {
+                fileNameDisplay.textContent = 'Gagal membaca file.';
+            };
+            
+            reader.readAsArrayBuffer(file);
+        };
+
+        // Event listener untuk tombol upload
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            processFile(file);
+        });
+
+        // Event listener untuk Drag & Drop
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Mencegah browser membuka file
+            uploadBox.classList.add('dragover');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            processFile(file);
+        });
+    </script>
+</body>
+</html>
+

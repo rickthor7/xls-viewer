@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic PDF Converter - XLS/XLSX to PDF</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f0f1a;
+            --card-bg-color: rgba(22, 22, 34, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-accent: #6a5af9;
+            --secondary-accent: #f72585;
+            --text-color: #e0e0e0;
+            --text-muted-color: #a0a0b0;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(106, 90, 249, 0.2) 0%, transparent S40%),
+                radial-gradient(circle at 90% 80%, rgba(247, 37, 133, 0.2) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-muted-color);
+        }
+
+        .upload-box {
+            background: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-accent);
+        }
+
+        .upload-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+        }
+
+        .upload-button {
+            background: var(--primary-accent);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            background: #7a6bff;
+        }
+        
+        .upload-button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+
+        #fileInput {
+            display: none;
+        }
+        
+        #statusText {
+            margin-top: 25px;
+            color: var(--text-muted-color);
+            font-style: italic;
+            min-height: 20px;
+        }
+        
+        footer {
+            margin-top: 50px;
+            color: var(--text-muted-color);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Galactic PDF Converter</h1>
+            <p>Ubah file Excel (.xls, .xlsx) menjadi PDF secara instan.</p>
+        </header>
+        <main>
+            <div class="upload-box">
+                <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                        <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1m-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0"/>
+                    </svg>
+                </div>
+                <h2>Siap Mengonversi File Anda</h2>
+                <button id="uploadButton" class="upload-button">Pilih File Excel</button>
+                <input type="file" id="fileInput" accept=".xls, .xlsx">
+                <p id="statusText">Pilih file untuk memulai...</p>
+            </div>
+        </main>
+        <footer>
+            <p>Dibuat oleh thoriq ganteng.</p>
+        </footer>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const statusText = document.getElementById('statusText');
+        
+        // API Secret Anda sudah dimasukkan di sini
+        const API_SECRET = 'XBmf8l4rkjvZlcFnUH0eupKYyFPG5ozr';
+
+        uploadButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileConvert(file);
+            }
+        });
+
+        const handleFileConvert = async (file) => {
+            if (API_SECRET === 'GANTI_DENGAN_API_SECRET_ANDA') {
+                statusText.innerText = 'Error: Harap masukkan API Secret Anda di dalam kode JavaScript.';
+                return;
+            }
+
+            uploadButton.disabled = true;
+            uploadButton.innerText = 'Mengonversi...';
+            statusText.innerText = `Mengunggah ${file.name}...`;
+
+            const formData = new FormData();
+            formData.append('File', file);
+            
+            try {
+                const response = await fetch(`https://v2.convertapi.com/convert/xls/to/pdf?Secret=${API_SECRET}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API Error: ${errorData.Code} - ${errorData.Message}`);
+                }
+                
+                statusText.innerText = 'Konversi berhasil! Memulai unduhan...';
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+
+                const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
+                a.download = `${originalName}.pdf`;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                
+                statusText.innerText = 'File PDF berhasil diunduh!';
+
+            } catch (error) {
+                console.error('Terjadi kesalahan:', error);
+                statusText.innerText = `Gagal! ${error.message}`;
+            } finally {
+                uploadButton.disabled = false;
+                uploadButton.innerText = 'Pilih File Excel Lain';
+                fileInput.value = ''; 
+            }
+        };
+    </script>
+</body>
+</html>
